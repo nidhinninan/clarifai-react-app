@@ -1,0 +1,21 @@
+{
+  "dev": {
+    "awscloudformation": {
+      "AuthRoleName": "amplify-clarifai-dev-1c31b-authRole",
+      "UnauthRoleArn": "arn:aws:iam::353833416570:role/amplify-clarifai-dev-1c31b-unauthRole",
+      "AuthRoleArn": "arn:aws:iam::353833416570:role/amplify-clarifai-dev-1c31b-authRole",
+      "Region": "us-east-1",
+      "DeploymentBucketName": "amplify-clarifai-dev-1c31b-deployment",
+      "UnauthRoleName": "amplify-clarifai-dev-1c31b-unauthRole",
+      "StackName": "amplify-clarifai-dev-1c31b",
+      "StackId": "arn:aws:cloudformation:us-east-1:353833416570:stack/amplify-clarifai-dev-1c31b/c8983630-b9f5-11f0-9d08-12e65b79eb4d",
+      "AmplifyAppId": "d1k5pyp7kadcjz"
+    },
+    "categories": {
+      "auth": {
+        "clarifai7f7ab2e0": {},
+        "userPoolGroups": {}
+      }
+    }
+  }
+}
