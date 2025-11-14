@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { API } from 'aws-amplify';
+import { fetchAuthSession } from 'aws-amplify/auth';
 import { apiConfig } from '../aws-config';
 import './Dashboard.css';
 
@@ -18,15 +18,33 @@ export default function UserDashboard() {
     setResponse('Processing your question...');
 
     try {
-      const result = await API.post('ClarifyAIAPI', '', {
-        body: {
-          question: query.trim()
+      // Get the JWT token from Cognito
+      const session = await fetchAuthSession();
+      const token = session.tokens?.idToken?.toString();
+
+      if (!token) {
+        throw new Error('No authentication token available');
+      }
+
+      // Call API Gateway with JWT token
+      const result = await fetch(apiConfig.queryUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
         },
-        endpoint: apiConfig.queryUrl
+        body: JSON.stringify({
+          question: query.trim()
+        })
       });
 
-      const answer = result.answer || result.text || JSON.stringify(result);
-      const citations = result.citations || [];
+      if (!result.ok) {
+        throw new Error(`API Error: ${result.status} ${result.statusText}`);
+      }
+
+      const data = await result.json();
+      const answer = data.answer || data.text || JSON.stringify(data);
+      const citations = data.citations || [];
       
       let formattedResponse = answer;
       if (citations.length > 0) {
@@ -70,6 +88,80 @@ export default function UserDashboard() {
     </div>
   );
 }
+
+
+// import React, { useState } from 'react';
+// import { API } from 'aws-amplify';
+// import { apiConfig } from '../aws-config';
+// import './Dashboard.css';
+
+// export default function UserDashboard() {
+//   const [query, setQuery] = useState('');
+//   const [response, setResponse] = useState('');
+//   const [querying, setQuerying] = useState(false);
+
+//   async function handleQuery() {
+//     if (!query.trim()) {
+//       alert('Please enter a question');
+//       return;
+//     }
+
+//     setQuerying(true);
+//     setResponse('Processing your question...');
+
+//     try {
+//       const result = await API.post('ClarifyAIAPI', '', {
+//         body: {
+//           question: query.trim()
+//         },
+//         endpoint: apiConfig.queryUrl
+//       });
+
+//       const answer = result.answer || result.text || JSON.stringify(result);
+//       const citations = result.citations || [];
+      
+//       let formattedResponse = answer;
+//       if (citations.length > 0) {
+//         formattedResponse += '\n\nSources:\n' + citations.map((cite, idx) => 
+//           `${idx + 1}. ${cite.title || cite.uri || cite}`
+//         ).join('\n');
+//       }
+      
+//       setResponse(formattedResponse);
+//     } catch (error) {
+//       console.error('Query error:', error);
+//       setResponse('Error: ' + error.message);
+//     } finally {
+//       setQuerying(false);
+//     }
+//   }
+
+//   return (
+//     <div className="dashboard">
+//       <h2>User Dashboard</h2>
+      
+//       <div className="query-section">
+//         <h3>Ask Questions</h3>
+//         <textarea
+//           placeholder="Enter your question about the documents..."
+//           value={query}
+//           onChange={(e) => setQuery(e.target.value)}
+//           rows="3"
+//         />
+//         <button onClick={handleQuery} disabled={querying || !query.trim()}>
+//           {querying ? 'Processing...' : 'Ask Question'}
+//         </button>
+        
+//         {response && (
+//           <div className="response-box">
+//             <h4>Response:</h4>
+//             <pre>{response}</pre>
+//           </div>
+//         )}
+//       </div>
+//     </div>
+//   );
+// }
 
 // import React, { useState } from "react";
 // import { useNavigate } from "react-router-dom";
