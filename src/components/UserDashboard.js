@@ -1,23 +1,76 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./UserDashboard.css";
+import { fetchAuthSession } from 'aws-amplify/auth';
+import { apiConfig } from '../aws-config';
 
-export default function UserDashboard() {
+export default function UserDashboard({ signOut }) {
   const navigate = useNavigate();
-
   const [query, setQuery] = useState("");
-  const [status, setStatus] = useState("");
+  // const [status, setStatus] = useState("");
+  const [response, setResponse] = useState("");
   const [history, setHistory] = useState([]);
+  const [querying, setQuerying] = useState(false);
 
-  function handleSend() {
+  async function handleSend() {
     const q = query.trim();
-    if (!q) return;
-    const ticketId = `#${Math.floor(100000 + Math.random() * 900000)}`;
-    const confirmation = `Your query has been sent to the admin. Ticket ${ticketId}.`;
+    if (!query.trim()) {
+      alert('Please enter a question');
+      return;
+    }
+    // const ticketId = `#${Math.floor(100000 + Math.random() * 900000)}`;
+    // const confirmation = `Your query has been sent to the admin. Ticket ${ticketId}.`;
 
-    setStatus(confirmation);
-    setHistory((h) => [{ id: Date.now(), q, ticketId }, ...h]);
+    setQuerying(true);
     setQuery("");
+    setResponse("Searching for an answer...");
+
+    try {
+      // Get the JWT token from Cognito
+      const session = await fetchAuthSession();
+      const token = session.tokens?.idToken?.toString();
+
+      if (!token) {
+        throw new Error('No authentication token available');
+      }
+     
+      // Call API Gateway with JWT token 
+      const result = await fetch(apiConfig.queryUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          question: query.trim()
+        })      
+      });
+
+      if (!result.ok) {
+        throw new Error(`API Error: ${result.status} ${result.statusText}`);
+      }
+
+      const data = await result.json();
+      const answer = data.answer || data.text || JSON.stringify(data);
+      const citations = data.citations || [];
+      
+      let formattedResponse = answer;
+      if (citations.length > 0) {
+        formattedResponse += '\n\nSources:\n' + citations.map((cite, idx) => 
+          `${idx + 1}. ${cite.title || cite.uri || cite}`
+        ).join('\n');
+      }
+
+      setResponse(formattedResponse);
+      setHistory((h) => [{ id: Date.now(), q: q, a: formattedResponse, c: citations }, ...h]);
+    } catch (error) {
+      console.error("Error querying API:", error);
+      const errorMessage = `Error: ${error.message || 'Could not get a response.'}`;
+      setResponse(errorMessage);
+      setHistory((h) => [{ id: Date.now(), q: q, a: errorMessage, c: [] }, ...h]);
+    } finally {
+      setQuerying(false);
+    }
   }
 
   return (
@@ -37,11 +90,7 @@ export default function UserDashboard() {
           <button className="btn ghost" type="button" onClick={() => navigate("/")}>
             Help
           </button>
-          <button
-            className="btn outline"
-            type="button"
-            onClick={() => navigate("/user-login")}
-          >
+          <button className="btn outline" type="button" onClick={signOut}>
             Logout
           </button>
         </div>
@@ -61,17 +110,18 @@ export default function UserDashboard() {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
             />
-            <button className="btn" onClick={handleSend} type="button">
-              Send
+            <button className="btn" onClick={handleSend} disabled={querying || !query.trim()}> 
+              {querying ? 'Processing...' : 'Ask Question'}
             </button>
           </div>
 
           <textarea
             className="textarea"
             placeholder="Status and responses will appear here…"
-            value={status}
-            onChange={(e) => setStatus(e.target.value)}
+            value={response}
+            onChange={(e) => setResponse(e.target.value)}
             rows={6}
+            readOnly
           />
 
           <h4 className="section-title">Your Recent Queries</h4>
@@ -86,8 +136,8 @@ export default function UserDashboard() {
                     <p>{item.q}</p>
                   </div>
                   <div className="qa">
-                    <span className="badge a">ID</span>
-                    <p>{item.ticketId}</p>
+                    <span className="badge a">A</span>
+                    <p>{item.a}</p>
                   </div>
                 </div>
               ))

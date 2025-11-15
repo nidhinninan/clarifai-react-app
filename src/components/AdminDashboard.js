@@ -1,53 +1,144 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
+import { fetchAuthSession } from 'aws-amplify/auth';
 import { useNavigate } from "react-router-dom";
 import "./AdminDashboard.css";
-import { getByDisplayValue } from "@testing-library/dom";
+import { apiConfig } from '../aws-config';
 
-export default function AdminDashboard() {
+export default function AdminDashboard({ signOut }) {
+  const fileInputRef = useRef(null);
   const navigate = useNavigate();
 
   const [file, setFile] = useState(null);
   const [uploading, setUploading] = useState(false);
+  const [uploadStatus, setUploadStatus] = useState('');
   const [progress, setProgress] = useState(0);
 
   const [query, setQuery] = useState("");
+  const [querying, setQuerying] = useState(false);
   const [response, setResponse] = useState("");
   const [history, setHistory] = useState([]);
 
   function onFileChange(e) {
     const f = e.target.files?.[0];
     setFile(f || null);
+    setUploadStatus('');
     setProgress(0);
   }
 
-  function uploadFile() {
-    if (!file || uploading) return;
+  async function uploadFile() {
+    if (!file) {
+      alert('Please select a file first');
+      return;
+    }
+
     setUploading(true);
     setProgress(0);
-    // Simulated progress just for UI feel
-    const timer = setInterval(() => {
-      setProgress((p) => {
-        if (p >= 100) {
-          clearInterval(timer);
-          setUploading(false);
-          return 100;
-        }
-        return p + 8;
+    setUploadStatus('Reading file...');
+    
+    try {
+      // Get the JWT token from Cognito
+      const session = await fetchAuthSession();
+      const token = session.tokens?.idToken?.toString();
+      
+      if (!token) {
+        throw new Error('No authentication token available');
+      }
+      
+      // Convert file to base64
+      const base64File = await toBase64(file);
+      setUploadStatus('Uploading to server...');
+      setProgress(50);
+      
+      // Call upload Lambda through API Gateway
+      const result = await fetch(apiConfig.uploadUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          fileName: file.name,
+          fileContent: base64File,
+          contentType: file.type
+        })
       });
-    }, 120);
+      
+      if (!result.ok) {
+        throw new Error(`Upload failed: ${result.status} ${result.statusText}`);
+      }
+      
+      alert('Document uploaded successfully! Remember to sync your Knowledge Base in AWS Console.');
+      setProgress(100);
+      setUploadStatus('✅ Upload successful!');
+      setFile(null);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    } catch (error) {
+      console.error("Error uploading file:", error);
+      setUploadStatus(`❌ Error: ${error.message || 'Upload failed'}`);
+      setProgress(0);
+    } finally {
+      setUploading(false);
+    }
   }
 
-  function handleSend() {
-    if (!query.trim()) return;
-    // Simulated “bot” response
-    const botReply =
-      "Thanks for your query. An admin will review and respond shortly.";
-    setResponse(botReply);
-    setHistory((h) => [
-      { id: Date.now(), q: query.trim(), a: botReply },
-      ...h,
-    ]);
+  async function handleSend() {
+    if (!query.trim()) {
+      alert('Please enter a question');
+      return;
+    }
+
+    const currentQuery = query.trim();
+    setQuerying(true);
     setQuery("");
+    setResponse("Thinking...");
+
+    try {
+      // Get the JWT token from Cognito
+      const session = await fetchAuthSession();
+      const token = session.tokens?.idToken?.toString();
+
+      if (!token) {
+        throw new Error('No authentication token available');
+      }
+
+      // Call query Lambda through API Gateway
+      const result = await fetch(apiConfig.queryUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          question: query.trim()
+        })
+      });
+
+      if (!result.ok) {
+        throw new Error(`API Error: ${result.status} ${result.statusText}`);
+      }
+
+      const data = await result.json();
+      const answer = data.answer || data.text || JSON.stringify(data);
+      const citations = data.citations || [];
+      
+      let formattedResponse = answer;
+      if (citations.length > 0) {
+        formattedResponse += '\n\nSources:\n' + citations.map((cite, idx) => 
+          `${idx + 1}. ${cite.title || cite.uri || cite}`
+        ).join('\n');
+      }
+      setResponse(formattedResponse);
+      setHistory((h) => [{ id: Date.now(), q: currentQuery, a: formattedResponse }, ...h]);
+    } catch (error) {
+      console.error("Error querying API:", error);
+      const errorMessage = `Error: ${error.message || 'Could not get a response.'}`;
+      setResponse(errorMessage);
+      setHistory((h) => [{ id: Date.now(), q: currentQuery, a: errorMessage }, ...h]);
+    } finally {
+      setQuerying(false);
+    }
   }
 
   return (
@@ -67,11 +158,7 @@ export default function AdminDashboard() {
           <button className="btn ghost" type="button" onClick={() => navigate("/")}>
             Docs
           </button>
-          <button
-            className="btn outline"
-            type="button"
-            onClick={() => navigate("/admin-login")}
-          >
+          <button className="btn outline" type="button" onClick={signOut}>
             Logout
           </button>
         </div>
@@ -89,10 +176,15 @@ export default function AdminDashboard() {
             <div className="dz-icon">📄</div>
             <div className="dz-text">
               <strong>Click to choose</strong> or drag & drop
-              <div className="dz-hint">Max 25MB · PDF, PNG, JPG, XLSX</div>
+              <div className="dz-hint">Max 25MB · PDF, TXT, DOC, DOCX</div>
             </div>
-            <input className="displayNone" id="fileInput" type="file" onChange={onFileChange} hidden />
-            
+            <input className="displayNone"
+              id="file-input"
+              ref={fileInputRef}
+              type="file"
+              accept=".pdf,.txt,.doc,.docx"
+              onChange={onFileChange}
+            />            
           </label>
 
           {file && (
@@ -106,9 +198,12 @@ export default function AdminDashboard() {
                     {(file.size / (1024 * 1024)).toFixed(2)} MB
                   </div>
                 </div>
-                <button className="btn" onClick={uploadFile} disabled={uploading} type="button">
+                <button className="btn" onClick={uploadFile} disabled={uploading || !file} type="button">
                   {uploading ? "Uploading…" : "Upload"}
                 </button>
+                <p className="info-text">
+                  After uploading, remember to sync your Knowledge Base in AWS Bedrock Console.
+                </p>
               </div>
 
               <div className="progress" role="progressbar" aria-label="Upload progress">
@@ -121,6 +216,10 @@ export default function AdminDashboard() {
                 />
               </div>
             </>
+          )}
+
+          {uploadStatus && (
+            <div className="helper" style={{ marginTop: '10px' }}>{uploadStatus}</div>
           )}
 
           <div className="helper">
@@ -142,8 +241,8 @@ export default function AdminDashboard() {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
             />
-            <button className="btn" onClick={handleSend} type="button">
-              Send
+            <button onClick={handleSend} disabled={querying || !query.trim()}>
+              {querying ? 'Processing...' : 'Ask Question'}
             </button>
           </div>
 
@@ -183,3 +282,11 @@ export default function AdminDashboard() {
     </div>
   );
 }
+
+// Helper function to convert a file to a base64 string
+const toBase64 = (file) => new Promise((resolve, reject) => {
+  const reader = new FileReader();
+  reader.readAsDataURL(file);
+  reader.onload = () => resolve(reader.result.split(',')[1]);
+  reader.onerror = error => reject(error);
+});
