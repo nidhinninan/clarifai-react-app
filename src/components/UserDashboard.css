@@ -100,6 +100,76 @@
   margin-top: 12px;
 }
 
+.response-area {
+  min-height: 150px;
+  padding: 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background-color: #f9f9f9;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.placeholder-text {
+  color: #999;
+  font-style: italic;
+}
+
+/* Optional: style Markdown elements inside response */
+/* Optional: style Markdown elements inside response */
+.response-area h1,
+.response-area h2,
+.response-area h3 {
+  margin-top: 0.5em;
+  margin-bottom: 0.3em;
+}
+
+.response-area ul,
+.response-area ol {
+  margin: 0.3em 0;  /* Reduced from 1.5em (which was only margin-left) */
+  padding-left: 1.5em;
+}
+
+.response-area li {
+  margin: 0.2em 0;  /* Tighten list item spacing */
+}
+
+.response-area p {
+  margin: 0.3em 0;  /* Add paragraph spacing control */
+}
+
+.response-area p:first-child {
+  margin-top: 0;
+}
+
+.response-area p:last-child {
+  margin-bottom: 0;
+}
+
+.response-area code {
+  background-color: #f0f0f0;
+  padding: 2px 4px;
+  border-radius: 3px;
+  font-family: 'Courier New', monospace;
+}
+
+.response-area pre {
+  background-color: #f0f0f0;
+  padding: 10px;
+  border-radius: 4px;
+  overflow-x: auto;
+  margin: 0.5em 0;
+}
+
+.response-area pre code {
+  background: none;
+  padding: 0;
+}
+
 /* Chat form row */
 .chat-form {
   display: grid;

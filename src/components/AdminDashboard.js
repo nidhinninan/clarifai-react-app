@@ -1,6 +1,7 @@
 import React, { useState, useRef } from "react";
 import { fetchAuthSession } from 'aws-amplify/auth';
 import { useNavigate } from "react-router-dom";
+import ReactMarkdown from 'react-markdown';
 import "./AdminDashboard.css";
 import { apiConfig } from '../aws-config';
 
@@ -111,7 +112,7 @@ export default function AdminDashboard({ signOut }) {
           'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({
-          question: query.trim()
+          query: currentQuery
         })
       });
 
@@ -120,7 +121,7 @@ export default function AdminDashboard({ signOut }) {
       }
 
       const data = await result.json();
-      const answer = data.answer || data.text || JSON.stringify(data);
+      const answer = data.response || data.answer || data.text || JSON.stringify(data);
       const citations = data.citations || [];
       
       let formattedResponse = answer;
@@ -246,13 +247,22 @@ export default function AdminDashboard({ signOut }) {
             </button>
           </div>
 
-          <textarea
+          {/* <textarea
             className="textarea"
             placeholder="Response will appear here…"
             value={response}
             onChange={(e) => setResponse(e.target.value)}
             rows={6}
-          />
+          /> */}
+          {response ? (
+            <div className="markdown-content textarea">
+              <ReactMarkdown>{response}</ReactMarkdown>
+            </div>
+          ) : (
+            <div className="markdown-content textarea placeholder-text">
+              Responses will appear here…
+            </div>
+          )}
 
           <h4 className="section-title">Recent Queries</h4>
           <div className="history">
@@ -267,7 +277,9 @@ export default function AdminDashboard({ signOut }) {
                   </div>
                   <div className="qa">
                     <span className="badge a">A</span>
-                    <p>{item.a}</p>
+                    <div className="markdown-content">
+                      <ReactMarkdown>{item.a}</ReactMarkdown>
+                    </div>
                   </div>
                 </div>
               ))
