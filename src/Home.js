@@ -11,12 +11,18 @@ export default function Home() {
           {/* <h1 className="title">ClarifyAI</h1> */}
           {/* <h2 className="subtitle">Company Document Insight Assistant</h2> */}
           <div className="button-group">
-            <Link to="/admin-login">
+            <Link to="/login">
               <button className="btn admin-btn">Admin</button>
             </Link>
-            <Link to="/user-login">
+            {/* <Link to="/admin">
+              <button className="btn admin-btn">Admin Dashboard</button>
+            </Link> */}
+            <Link to="/login">
               <button className="btn user-btn">User</button>
             </Link>
+            {/* <Link to="/user">
+              <button className="btn user-btn">User Dashboard</button>
+            </Link> */}
           </div>
         </div>
       </div>
