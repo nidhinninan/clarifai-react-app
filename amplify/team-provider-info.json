@@ -34,18 +34,18 @@
       "auth": {
         "clarifai7f7ab2e0": {},
         "userPoolGroups": {},
-        "clarifai9c3029bd": {
-          "userPoolId": "us-east-1_co9Lw6LoC",
-          "userPoolName": "clarifai7f7ab2e0_userpool_7f7ab2e0-staging",
-          "webClientId": "jhus4md7urkcs46pd4d5m6ebm",
-          "nativeClientId": "jhus4md7urkcs46pd4d5m6ebm",
-          "identityPoolId": "us-east-1:2d4ed588-de7f-4336-9ee6-c1773f2ecce1",
-          "identityPoolName": "clarifai7f7ab2e0_identitypool_7f7ab2e0__staging",
+        "clarifaide0df3d5": {
+          "userPoolId": "us-east-1_oCprUOs8K",
+          "userPoolName": "clarifai7f7ab2e0_userpool_7f7ab2e0-main",
+          "webClientId": "2rinutpgmkp5tdm19fis4eiae4",
+          "nativeClientId": "2rinutpgmkp5tdm19fis4eiae4",
+          "identityPoolId": "us-east-1:c281ebbc-ed17-49b3-af31-217af826521a",
+          "identityPoolName": "clarifai7f7ab2e0_identitypool_7f7ab2e0__main",
           "allowUnauthenticatedIdentities": false,
-          "authRoleArn": "arn:aws:iam::353833416570:role/amplify-clarifai-staging-2dec3-authRole",
-          "authRoleName": "amplify-clarifai-staging-2dec3-authRole",
-          "unauthRoleArn": "arn:aws:iam::353833416570:role/amplify-clarifai-staging-2dec3-unauthRole",
-          "unauthRoleName": "amplify-clarifai-staging-2dec3-unauthRole"
+          "authRoleArn": "arn:aws:iam::353833416570:role/amplify-clarifaireactapp-main-05959-authRole",
+          "authRoleName": "amplify-clarifaireactapp-main-05959-authRole",
+          "unauthRoleArn": "arn:aws:iam::353833416570:role/amplify-clarifaireactapp-main-05959-unauthRole",
+          "unauthRoleName": "amplify-clarifaireactapp-main-05959-unauthRole"
         }
       }
     }
