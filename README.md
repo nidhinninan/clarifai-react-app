@@ -122,7 +122,7 @@ Managed user directory (User Pool) and scoped AWS credentials (Identity Pool).
 Managed API front door supporting authorizers and CORS.  
 **Purpose here:** Exposes POST /query secured by a Cognito authorizer; enforces token checks and CORS for the Amplify domain.
 
-### AWS Lambda (Python 3.11)
+### AWS Lambda (Python 3.13)
 Serverless compute for short functions.  
 **Purpose here:** Validates identity context and calls Bedrock retrieve-and-generate against the Knowledge Base; formats `{ text, citations[] }`.
 
