@@ -1,16 +1,36 @@
 import React from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
-import { Authenticator } from '@aws-amplify/ui-react';
+import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
+import { Authenticator, useAuthenticator } from '@aws-amplify/ui-react';
 import '@aws-amplify/ui-react/styles.css';
+import Home from './Home';
 import AdminDashboard from './components/AdminDashboard';
 import UserDashboard from './components/UserDashboard';
+import Login from './components/Login'; 
+import { signOut as amplifySignOut } from 'aws-amplify/auth';
 import './App.css';
 
 function App() {
+  const navigate = useNavigate();
+
+  async function handleSignOut() {
+    try {
+      await amplifySignOut();
+      navigate('/'); // Redirect to home page after sign out
+    } catch (error) {
+      console.error('error signing out: ', error);
+    }
+  }
   return (
     <Routes>
-      {/* The Authenticator will handle the sign-in UI and logic */}
-      <Route path="/*" element={<AuthenticatedApp />} />
+      {/* 1. Landing page is now the public Home component */}
+      <Route path="/" element={<Home />} />
+
+      {/* 2. Cognito login page (Custom Login UI) */}
+      <Route path="/login" element={<Login />} />
+
+      {/* 3. Protected dashboards */}
+      <Route path="/admin-dashboard" element={<AdminDashboard signOut={handleSignOut} />} />
+      <Route path="/user-dashboard" element={<UserDashboard signOut={handleSignOut} />} />
     </Routes>
   );
 }
@@ -45,10 +65,11 @@ function RoleBasedDashboard({ user, signOut }) {
     return <UserDashboard user={user} signOut={signOut} />;
   } else {
     return (
-      <div>
-        <h2>Access Denied</h2>
-        <p>You don't have the required permissions. Please contact your administrator.</p>
-      </div>
+      <div className="access-denied">
+      <h2>Access Denied</h2>
+      <p>You don't have the required permissions. Please contact your administrator.</p>
+      <button type="button" onClick={signOut}>Sign out</button>
+    </div>
     );
   }
 }

@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./UserDashboard.css";
+import ReactMarkdown from 'react-markdown';
 import { fetchAuthSession } from 'aws-amplify/auth';
 import { apiConfig } from '../aws-config';
 
@@ -22,6 +23,7 @@ export default function UserDashboard({ signOut }) {
     // const confirmation = `Your query has been sent to the admin. Ticket ${ticketId}.`;
 
     setQuerying(true);
+    // setStatus(confirmation);
     setQuery("");
     setResponse("Searching for an answer...");
 
@@ -42,7 +44,7 @@ export default function UserDashboard({ signOut }) {
           'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({
-          question: query.trim()
+          query: q
         })      
       });
 
@@ -51,7 +53,7 @@ export default function UserDashboard({ signOut }) {
       }
 
       const data = await result.json();
-      const answer = data.answer || data.text || JSON.stringify(data);
+      const answer = data.response || data.answer || data.text || JSON.stringify(data);
       const citations = data.citations || [];
       
       let formattedResponse = answer;
@@ -115,14 +117,24 @@ export default function UserDashboard({ signOut }) {
             </button>
           </div>
 
-          <textarea
+          {/* <textarea
             className="textarea"
             placeholder="Status and responses will appear here…"
             value={response}
             onChange={(e) => setResponse(e.target.value)}
             rows={6}
             readOnly
-          />
+          /> */}
+
+          {response ? (
+            <div className="markdown-content textarea">
+              <ReactMarkdown>{response}</ReactMarkdown>
+            </div>
+          ) : (
+            <div className="markdown-content textarea placeholder-text">
+              Responses will appear here…
+            </div>
+          )}
 
           <h4 className="section-title">Your Recent Queries</h4>
           <div className="history">
@@ -137,7 +149,9 @@ export default function UserDashboard({ signOut }) {
                   </div>
                   <div className="qa">
                     <span className="badge a">A</span>
-                    <p>{item.a}</p>
+                    <div className="markdown-content">
+                      <ReactMarkdown>{item.a}</ReactMarkdown>
+                    </div>
                   </div>
                 </div>
               ))
